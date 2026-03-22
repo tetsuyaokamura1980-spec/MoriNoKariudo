@@ -167,7 +167,7 @@ function shootSpecial(){if(!g.specialReady)return;g.specialReady=false;g.effects
 var lastClick=0;
 function handleClick(e){
   var pos=getPos(e);
-  if(screen==="title"){var hs=g.highScore;g=makeGame(hs);screen="playing";lastClick=0;return;}
+  if(screen==="title"){var p0=getPos(e);if(p0[0]>=W/2-110&&p0[0]<=W/2+110&&p0[1]>=390&&p0[1]<=442){var hs=g.highScore;g=makeGame(hs);screen="playing";lastClick=0;}return;}
   if(screen==="gameover"){
     var p2=getPos(e);
     // Share buttons (active after animation done)
