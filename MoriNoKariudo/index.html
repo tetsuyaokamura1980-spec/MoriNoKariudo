@@ -147,6 +147,9 @@ function drawBar(c,x,y,w,h,ratio,c1,c2,r){c.fillStyle="rgba(0,0,0,0.4)";c.beginP
 var screen="title";
 var shake={x:0,y:0,t:0};
 var gameoverTime=0;
+var goAnimScore=0;
+var goAnimWave=0;
+var goAnimDone=false;
 
 function makeGame(hs){
   return{playerX:W/2,playerY:H-70,aimAngle:-Math.PI/2,projectiles:[],monsters:[],effects:[],spawnTimer:0,waveKills:0,waveTarget:5,mouseX:W/2,mouseY:H/2,score:0,highScore:hs||0,combo:0,comboTimer:0,arrows:10,wave:1,arrowRegenTimer:0,specialReady:false,luckyBoxes:[],boss:null,dog:null,level:1,xp:0,xpToNext:300,arrowSpeed:9,maxArrows:12,arrowRegenInterval:1800};
@@ -167,17 +170,19 @@ function handleClick(e){
   if(screen==="title"){var hs=g.highScore;g=makeGame(hs);screen="playing";lastClick=0;return;}
   if(screen==="gameover"){
     var p2=getPos(e);
-    // Share buttons (always active)
-    var sbY=370,sbW=90,sbH=36,sbGap=12;
-    var shareText=encodeURIComponent("🏹もりのかりうど🌲\nスコア:"+g.score+" / WAVE "+g.wave+" / Lv."+g.level+"\n#もりのかりうど");
-    var shareUrl=encodeURIComponent("https://tetsuyaokamura1980-spec.github.io/MoriNoKariudo/");
-    if(p2[1]>=sbY&&p2[1]<=sbY+sbH){
-      if(p2[0]>=W/2-sbW-sbGap/2&&p2[0]<=W/2-sbGap/2){window.open("https://x.com/intent/tweet?text="+shareText+"&url="+shareUrl,"_blank");return;}
-      if(p2[0]>=W/2+sbGap/2&&p2[0]<=W/2+sbW+sbGap/2){window.open("https://www.facebook.com/sharer/sharer.php?u="+shareUrl+"&quote="+shareText,"_blank");return;}
+    // Share buttons (active after animation done)
+    if(goAnimDone){
+      var sbY=390,sbW=90,sbH=40,sbGap=12;
+      var shareText=encodeURIComponent("🏹もりのかりうど🌲\nスコア:"+g.score+" / WAVE "+g.wave+" / Lv."+g.level+"\n#もりのかりうど");
+      var shareUrl=encodeURIComponent("https://tetsuyaokamura1980-spec.github.io/MoriNoKariudo/");
+      if(p2[1]>=sbY&&p2[1]<=sbY+sbH){
+        if(p2[0]>=W/2-sbW-sbGap/2&&p2[0]<=W/2-sbGap/2){window.open("https://x.com/intent/tweet?text="+shareText+"&url="+shareUrl,"_blank");return;}
+        if(p2[0]>=W/2+sbGap/2&&p2[0]<=W/2+sbW+sbGap/2){window.open("https://www.facebook.com/sharer/sharer.php?u="+shareUrl+"&quote="+shareText,"_blank");return;}
+      }
     }
-    // Retry button (1.5s guard)
-    if(Date.now()-gameoverTime<1500)return;
-    var bx=W/2-100,by2=430,bw2=200,bh2=48;
+    // Retry button (3.5s guard + button area only)
+    if(Date.now()-gameoverTime<3500)return;
+    var bx=W/2-100,by2=510,bw2=200,bh2=48;
     if(p2[1]>=by2&&p2[1]<=by2+bh2&&p2[0]>=bx&&p2[0]<=bx+bw2){var hs=g.highScore;g=makeGame(hs);screen="playing";lastClick=0;}
     return;
   }
@@ -213,7 +218,7 @@ function loop(time){
 
     var escaped=false;
     g.monsters=g.monsters.filter(function(m){m.x+=m.vx*dtM;m.y+=m.vy*dtM;m.bobPhase+=0.04*dtM;if(m.hitTimer>0)m.hitTimer-=dt;if(m.x<m.size/2){m.x=m.size/2;m.vx=Math.abs(m.vx);}if(m.x>W-m.size/2){m.x=W-m.size/2;m.vx=-Math.abs(m.vx);}if(m.y>H+30){escaped=true;return false;}return true;});
-    if(escaped){g.highScore=Math.max(g.highScore,g.score);screen="gameover";gameoverTime=Date.now();}
+    if(escaped){g.highScore=Math.max(g.highScore,g.score);screen="gameover";gameoverTime=Date.now();goAnimScore=0;goAnimWave=0;goAnimDone=false;}
 
     g.projectiles=g.projectiles.filter(function(p){
       var hit=false;
@@ -253,7 +258,7 @@ function loop(time){
       if(bo.hitTimer>0)bo.hitTimer-=dt;bo.attackTimer+=dt;
       if(bo.attackTimer>3000&&bo.y>=bo.targetY){bo.attackTimer=0;g.monsters.push(spawnMonster(g.wave));}
       g.projectiles=g.projectiles.filter(function(p){if(dist(p.x,p.y,bo.x,bo.y)<bo.size*0.6){bo.hp-=p.special?5:1;bo.hitTimer=150;shake.t=p.special?250:100;g.effects.push({x:p.x,y:p.y,frame:0,type:p.special?"special_hit":"hit"});if(!p.special)return false;}return true;});
-      if(bo.y>H+50){g.highScore=Math.max(g.highScore,g.score);screen="gameover";gameoverTime=Date.now();g.boss=null;}
+      if(bo.y>H+50){g.highScore=Math.max(g.highScore,g.score);screen="gameover";gameoverTime=Date.now();goAnimScore=0;goAnimWave=0;goAnimDone=false;g.boss=null;}
       if(bo.hp<=0){g.score+=bo.score;g.xp+=bo.maxHp*20;while(g.xp>=g.xpToNext){g.xp-=g.xpToNext;g.level++;g.xpToNext=Math.floor(g.xpToNext*1.4);g.arrowSpeed+=0.8;g.maxArrows+=1;g.arrowRegenInterval=Math.max(800,g.arrowRegenInterval-50);g.effects.push({x:W/2,y:H/2+40,frame:0,type:"levelup",text:"Lv."+g.level});}g.effects.push({x:bo.x,y:bo.y,frame:0,type:"score",text:"+"+bo.score});g.effects.push({x:W/2,y:H/2,frame:0,type:"boss_defeat",text:bo.name+" 撃破！"});for(var dp2=0;dp2<16;dp2++)g.effects.push({x:bo.x+(Math.random()-0.5)*80,y:bo.y+(Math.random()-0.5)*80,frame:0,type:"particle",vx:(Math.random()-0.5)*6,vy:-Math.random()*5});g.specialReady=true;g.arrows=g.maxArrows;g.effects.push({x:bo.x,y:bo.y+30,frame:0,type:"lucky",text:"⚡必殺GET！"});shake.t=600;g.boss=null;}
     }
 
@@ -315,35 +320,56 @@ function loop(time){
   }
 
   if(screen==="gameover"){
-    var goReady=Date.now()-gameoverTime>=1500;
-    ctx.fillStyle="rgba(0,0,0,0.65)";ctx.fillRect(0,0,W,H);ctx.textAlign="center";
-    drawGlass(ctx,40,150,W-80,370,16);
-    ctx.shadowColor="#ff4466";ctx.shadowBlur=20;ctx.fillStyle="#ff6666";ctx.font="900 34px "+FN;ctx.fillText("GAME OVER",W/2,195);ctx.shadowBlur=0;
-    ctx.fillStyle="rgba(255,170,170,0.7)";ctx.font="400 13px "+FN;ctx.fillText("モンスターに逃げられた…！",W/2,222);
-    ctx.fillStyle="#ffee44";ctx.font="700 24px "+FN;ctx.fillText(g.score+"",W/2,268);
-    ctx.fillStyle="rgba(255,238,68,0.5)";ctx.font="bold 10px "+FN;ctx.fillText("SCORE",W/2,248);
-    ctx.fillStyle="rgba(170,220,170,0.8)";ctx.font="400 14px "+FN;ctx.fillText("🏆 ハイスコア: "+g.highScore,W/2,300);ctx.fillText("WAVE "+g.wave+" 到達",W/2,322);
-    ctx.fillStyle="rgba(0,238,187,0.7)";ctx.font="400 13px "+FN;ctx.fillText("Lv."+g.level+"  💨×"+(g.arrowSpeed/9).toFixed(1)+"  ♻"+(g.arrowRegenInterval/1000).toFixed(1)+"s  🏹"+g.maxArrows+"本",W/2,348);
-    // Share buttons
-    var shareText=encodeURIComponent("🏹もりのかりうど🌲\nスコア:"+g.score+" / WAVE "+g.wave+" / Lv."+g.level+"\n#もりのかりうど");
-    var shareUrl=encodeURIComponent("https://tetsuyaokamura1980-spec.github.io/MoriNoKariudo/");
-    var sbY=370,sbW=90,sbH=36,sbGap=12;
-    // X button
-    ctx.fillStyle="#000";ctx.beginPath();ctx.roundRect(W/2-sbW-sbGap/2,sbY,sbW,sbH,8);ctx.fill();
-    ctx.strokeStyle="rgba(255,255,255,0.2)";ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(W/2-sbW-sbGap/2,sbY,sbW,sbH,8);ctx.stroke();
-    ctx.fillStyle="#fff";ctx.font="bold 15px "+FN;ctx.fillText("𝕏 Share",W/2-sbW/2-sbGap/2,sbY+23);
-    // FB button
-    ctx.fillStyle="#1877F2";ctx.beginPath();ctx.roundRect(W/2+sbGap/2,sbY,sbW,sbH,8);ctx.fill();
-    ctx.fillStyle="#fff";ctx.font="bold 14px "+FN;ctx.fillText("f Share",W/2+sbW/2+sbGap/2,sbY+23);
-    // Retry button
-    if(goReady){
-      var btnG2=ctx.createLinearGradient(0,430,0,478);btnG2.addColorStop(0,"#1a8a4a");btnG2.addColorStop(1,"#126b38");ctx.fillStyle=btnG2;ctx.shadowColor="#22ff88";ctx.shadowBlur=8;ctx.beginPath();ctx.roundRect(W/2-100,430,200,48,24);ctx.fill();ctx.shadowBlur=0;
-      ctx.strokeStyle="rgba(100,255,180,0.3)";ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(W/2-100,430,200,48,24);ctx.stroke();
-      ctx.fillStyle="#fff";ctx.font="700 18px "+FN;ctx.fillText("もう一回！",W/2,460);
+    var goElapsed=Date.now()-gameoverTime;
+    var goReady=goElapsed>=3500;
+    // Score count-up animation (1.5s duration)
+    var animDur=1500;
+    if(goElapsed<animDur){
+      var t=goElapsed/animDur;t=1-Math.pow(1-t,3);
+      goAnimScore=Math.floor(g.score*t);
+      goAnimWave=Math.floor(g.wave*t);
     }else{
-      ctx.fillStyle="rgba(80,80,80,0.6)";ctx.beginPath();ctx.roundRect(W/2-100,430,200,48,24);ctx.fill();
-      ctx.strokeStyle="rgba(150,150,150,0.2)";ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(W/2-100,430,200,48,24);ctx.stroke();
-      ctx.fillStyle="rgba(200,200,200,0.4)";ctx.font="700 18px "+FN;ctx.fillText("もう一回！",W/2,460);
+      goAnimScore=g.score;goAnimWave=g.wave;
+      if(!goAnimDone)goAnimDone=true;
+    }
+    // Fade-in overlay
+    var fadeIn=Math.min(1,goElapsed/500);
+    ctx.fillStyle="rgba(0,0,0,"+(0.65*fadeIn)+")";ctx.fillRect(0,0,W,H);ctx.textAlign="center";
+    drawGlass(ctx,40,120,W-80,450,16);
+    // GAME OVER title (slide down)
+    var titleY=165+Math.max(0,1-goElapsed/400)*(-30);
+    ctx.shadowColor="#ff4466";ctx.shadowBlur=20;ctx.fillStyle="#ff6666";ctx.font="900 34px "+FN;ctx.fillText("GAME OVER",W/2,titleY);ctx.shadowBlur=0;
+    ctx.fillStyle="rgba(255,170,170,0.7)";ctx.font="400 13px "+FN;ctx.fillText("モンスターに逃げられた…！",W/2,titleY+27);
+    // Score with count-up
+    ctx.fillStyle="rgba(255,238,68,0.5)";ctx.font="bold 11px "+FN;ctx.fillText("SCORE",W/2,228);
+    ctx.shadowColor="#ffee44";ctx.shadowBlur=15;ctx.fillStyle="#ffee44";ctx.font="900 36px "+FN;ctx.fillText(goAnimScore+"",W/2,265);ctx.shadowBlur=0;
+    // Stats (fade in after score animation)
+    if(goAnimDone){
+      var statAlpha=Math.min(1,(goElapsed-animDur)/400);
+      ctx.globalAlpha=statAlpha;
+      ctx.fillStyle="rgba(170,220,170,0.9)";ctx.font="700 15px "+FN;ctx.fillText("🏆 ハイスコア: "+g.highScore,W/2,300);
+      ctx.fillStyle="rgba(170,220,170,0.8)";ctx.font="400 14px "+FN;ctx.fillText("WAVE "+goAnimWave+" 到達",W/2,325);
+      ctx.fillStyle="rgba(0,238,187,0.7)";ctx.font="400 13px "+FN;ctx.fillText("Lv."+g.level+"  💨×"+(g.arrowSpeed/9).toFixed(1)+"  ♻"+(g.arrowRegenInterval/1000).toFixed(1)+"s  🏹"+g.maxArrows+"本",W/2,350);
+      // Share section
+      ctx.fillStyle="rgba(255,220,100,0.8)";ctx.font="700 13px "+FN;ctx.fillText("スコアをシェアしよう！",W/2,378);
+      var sbY=390,sbW=100,sbH=40,sbGap=14;
+      // X button
+      ctx.fillStyle="#000";ctx.beginPath();ctx.roundRect(W/2-sbW-sbGap/2,sbY,sbW,sbH,10);ctx.fill();
+      ctx.strokeStyle="rgba(255,255,255,0.25)";ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(W/2-sbW-sbGap/2,sbY,sbW,sbH,10);ctx.stroke();
+      ctx.fillStyle="#fff";ctx.font="bold 16px "+FN;ctx.fillText("𝕏 Share",W/2-sbW/2-sbGap/2,sbY+26);
+      // FB button
+      ctx.fillStyle="#1877F2";ctx.beginPath();ctx.roundRect(W/2+sbGap/2,sbY,sbW,sbH,10);ctx.fill();
+      ctx.fillStyle="#fff";ctx.font="bold 15px "+FN;ctx.fillText("f Share",W/2+sbW/2+sbGap/2,sbY+26);
+      ctx.globalAlpha=1;
+    }
+    // Retry button (appears after 3.5s, at bottom)
+    if(goReady){
+      var retryAlpha=Math.min(1,(goElapsed-3500)/500);
+      ctx.globalAlpha=retryAlpha;
+      var btnG2=ctx.createLinearGradient(0,510,0,558);btnG2.addColorStop(0,"#1a8a4a");btnG2.addColorStop(1,"#126b38");ctx.fillStyle=btnG2;ctx.shadowColor="#22ff88";ctx.shadowBlur=8;ctx.beginPath();ctx.roundRect(W/2-100,510,200,48,24);ctx.fill();ctx.shadowBlur=0;
+      ctx.strokeStyle="rgba(100,255,180,0.3)";ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(W/2-100,510,200,48,24);ctx.stroke();
+      ctx.fillStyle="#fff";ctx.font="700 18px "+FN;ctx.fillText("もう一回！",W/2,540);
+      ctx.globalAlpha=1;
     }
   }
 
