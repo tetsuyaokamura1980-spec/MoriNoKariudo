@@ -163,7 +163,8 @@ function shootSpecial(){if(!g.specialReady)return;g.specialReady=false;g.effects
 var lastClick=0;
 function handleClick(e){
   var pos=getPos(e);
-  if(screen==="title"||screen==="gameover"){var hs=g.highScore;g=makeGame(hs);screen="playing";lastClick=0;return;}
+  if(screen==="title"){var bx=W/2-110,by=390,bw=220,bh=52;if(pos[0]>=bx&&pos[0]<=bx+bw&&pos[1]>=by&&pos[1]<=by+bh){var hs=g.highScore;g=makeGame(hs);screen="playing";lastClick=0;}return;}
+  if(screen==="gameover"){var bx2=W/2-100,by2=410,bw2=200,bh2=48;if(pos[0]>=bx2&&pos[0]<=bx2+bw2&&pos[1]>=by2&&pos[1]<=by2+bh2){var hs=g.highScore;g=makeGame(hs);screen="playing";lastClick=0;}return;}
   if(screen==="playing"){var angle=Math.atan2(pos[1]-(g.playerY-20),pos[0]-g.playerX);if(angle>0.2)angle=0.2;g.aimAngle=angle;var now=Date.now();if(g.specialReady&&now-lastClick<300){shootSpecial();lastClick=0;}else{shoot();lastClick=now;}}
 }
 canvas.addEventListener("click",handleClick);
