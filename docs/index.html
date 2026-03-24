@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>もりのかりうど</title>
 <meta name="apple-mobile-web-app-title" content="もりかり">
 <meta name="theme-color" content="#020a05">
 <meta name="description" content="原生林のモンスターハンティングゲーム">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<title>もりのかりうど</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#020a05;touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
@@ -133,10 +133,10 @@ function drawPlayer(c,x,y,angle){
   c.fillStyle="#1a1a2a";c.beginPath();c.arc(-5,-18,3.5,0,Math.PI*2);c.fill();c.beginPath();c.arc(5,-18,3.5,0,Math.PI*2);c.fill();
   c.fillStyle="#fff";c.beginPath();c.arc(-3.5,-19.5,1.5,0,Math.PI*2);c.fill();c.beginPath();c.arc(6.5,-19.5,1.5,0,Math.PI*2);c.fill();
   c.strokeStyle="#cc7755";c.lineWidth=1.5;c.lineCap="round";c.beginPath();c.moveTo(-3,-11);c.quadraticCurveTo(0,-8,3,-11);c.stroke();
-  c.save();c.rotate(angle-Math.PI/2);c.shadowColor="rgba(100,255,180,0.3)";c.shadowBlur=6;c.strokeStyle="#8B5A2B";c.lineWidth=3.5;c.lineCap="round";c.beginPath();c.moveTo(0,-24);c.quadraticCurveTo(-14,0,0,24);c.stroke();c.shadowBlur=0;
-  c.strokeStyle="#ccbbaa";c.lineWidth=1;c.beginPath();c.moveTo(0,-22);c.lineTo(0,22);c.stroke();
-  c.strokeStyle="#8B6914";c.lineWidth=2.5;c.beginPath();c.moveTo(0,0);c.lineTo(20,0);c.stroke();
-  c.fillStyle="#ccc";c.beginPath();c.moveTo(22,-4);c.lineTo(30,0);c.lineTo(22,4);c.closePath();c.fill();
+  c.save();c.rotate(angle);c.shadowColor="rgba(100,255,180,0.3)";c.shadowBlur=6;c.strokeStyle="#8B5A2B";c.lineWidth=3.5;c.lineCap="round";c.beginPath();c.moveTo(-4,-22);c.quadraticCurveTo(12,0,-4,22);c.stroke();c.shadowBlur=0;
+  c.strokeStyle="#ccbbaa";c.lineWidth=1;c.beginPath();c.moveTo(-4,-20);c.lineTo(-4,20);c.stroke();
+  c.strokeStyle="#8B6914";c.lineWidth=2.5;c.beginPath();c.moveTo(-4,0);c.lineTo(22,0);c.stroke();
+  c.fillStyle="#ccc";c.beginPath();c.moveTo(20,-4);c.lineTo(30,0);c.lineTo(20,4);c.closePath();c.fill();
   c.restore();c.restore();
 }
 
@@ -150,6 +150,7 @@ function drawGlass(c,x,y,w,h,r){c.save();c.fillStyle="rgba(0,15,10,0.55)";c.begi
 function drawBar(c,x,y,w,h,ratio,c1,c2,r){c.fillStyle="rgba(0,0,0,0.4)";c.beginPath();c.roundRect(x,y,w,h,r||3);c.fill();if(ratio>0){var gr=c.createLinearGradient(x,0,x+w*ratio,0);gr.addColorStop(0,c1);gr.addColorStop(1,c2);c.fillStyle=gr;c.beginPath();c.roundRect(x,y,w*ratio,h,r||3);c.fill();}}
 
 var screen="title";
+var speedMul=1.0;
 var shake={x:0,y:0,t:0};
 var gameoverTime=0;
 var goAnimScore=0;
@@ -157,7 +158,7 @@ var goAnimWave=0;
 var goAnimDone=false;
 
 function makeGame(hs){
-  return{playerX:W/2,playerY:H-70,aimAngle:-Math.PI/2,projectiles:[],monsters:[],effects:[],spawnTimer:0,waveKills:0,waveTarget:5,mouseX:W/2,mouseY:H/2,score:0,highScore:hs||0,combo:0,comboTimer:0,arrows:10,wave:1,arrowRegenTimer:0,specialReady:false,luckyBoxes:[],boss:null,level:1,xp:0,xpToNext:300,arrowSpeed:9,maxArrows:12,arrowRegenInterval:1800};
+  return{playerX:W/2,playerY:H-70,aimAngle:-Math.PI/2,projectiles:[],monsters:[],effects:[],spawnTimer:0,waveKills:0,waveTarget:5,mouseX:W/2,mouseY:H/2,score:0,highScore:hs||0,combo:0,comboTimer:0,arrows:10,wave:1,arrowRegenTimer:0,specialReady:false,luckyBoxes:[],boss:null,dog:null,level:1,xp:0,xpToNext:300,arrowSpeed:9,maxArrows:12,arrowRegenInterval:1800};
 }
 var g=makeGame(0);
 
@@ -172,12 +173,12 @@ function shootSpecial(){if(!g.specialReady)return;g.specialReady=false;g.effects
 var lastClick=0;
 function handleClick(e){
   var pos=getPos(e);
-  if(screen==="title"){var p0=getPos(e);if(p0[0]>=W/2-110&&p0[0]<=W/2+110&&p0[1]>=390&&p0[1]<=442){var hs=g.highScore;g=makeGame(hs);screen="playing";lastClick=0;}return;}
+  if(screen==="title"){var p0=getPos(e);var bL=W/2-110,bR=W/2+110;if(p0[0]>=bL&&p0[0]<=bR&&p0[1]>=370&&p0[1]<=416){speedMul=1.0;var hs=g.highScore;g=makeGame(hs);screen="playing";lastClick=0;}if(p0[0]>=bL&&p0[0]<=bR&&p0[1]>=424&&p0[1]<=470){speedMul=1.5;var hs=g.highScore;g=makeGame(hs);screen="playing";lastClick=0;}return;}
   if(screen==="gameover"){
     var p2=getPos(e);
     // Share buttons (active after animation done)
     if(goAnimDone){
-      var sbY=390,sbW=100,sbH=40,sbGap=14;
+      var sbY=390,sbW=90,sbH=40,sbGap=12;
       var shareText=encodeURIComponent("🏹もりのかりうど🌲\nスコア:"+g.score+" / WAVE "+g.wave+" / Lv."+g.level+"\n#もりのかりうど");
       var shareUrl=encodeURIComponent("https://tetsuyaokamura1980-spec.github.io/MoriNoKariudo/");
       if(p2[1]>=sbY&&p2[1]<=sbY+sbH){
@@ -207,22 +208,22 @@ function loop(time){
 
   if(screen==="playing"){
     g.aimAngle=Math.atan2(g.mouseY-(g.playerY-20),g.mouseX-g.playerX);if(g.aimAngle>0.2)g.aimAngle=0.2;
-    g.arrowRegenTimer+=dt;if(g.arrowRegenTimer>g.arrowRegenInterval&&g.arrows<g.maxArrows){g.arrows++;g.arrowRegenTimer=0;}
+    g.arrowRegenTimer+=dt*speedMul;if(g.arrowRegenTimer>g.arrowRegenInterval&&g.arrows<g.maxArrows){g.arrows++;g.arrowRegenTimer=0;}
     if(g.comboTimer>0){g.comboTimer-=dt;if(g.comboTimer<=0)g.combo=0;}
 
-    g.luckyBoxes=(g.luckyBoxes||[]).filter(function(b){b.y+=0.5*dtM;b.bobPhase+=0.05*dtM;b.life-=dt;return b.life>0&&b.y<H+20;});
+    g.luckyBoxes=(g.luckyBoxes||[]).filter(function(b){b.y+=0.5*speedMul*dtM;b.bobPhase+=0.05*dtM;b.life-=dt;return b.life>0&&b.y<H+20;});
     g.luckyBoxes=g.luckyBoxes.filter(function(b){
       if(dist(g.playerX,g.playerY-20,b.x,b.y)<50){g.specialReady=true;g.effects.push({x:b.x,y:b.y,frame:0,type:"lucky",text:"⚡必殺GET！"});return false;}
       for(var pi=0;pi<g.projectiles.length;pi++){var p=g.projectiles[pi];if(!p.special&&dist(p.x,p.y,b.x,b.y)<28){g.specialReady=true;g.effects.push({x:b.x,y:b.y,frame:0,type:"lucky",text:"⚡必殺GET！"});return false;}}
       return true;
     });
 
-    g.spawnTimer+=dt;var rate=Math.max(800,2500-g.wave*150);
+    g.spawnTimer+=dt*speedMul;var rate=Math.max(800,2500-g.wave*150);
     if(!g.boss&&g.spawnTimer>rate){g.spawnTimer=0;g.monsters.push(spawnMonster(g.wave));}
-    g.projectiles=g.projectiles.filter(function(p){p.x+=p.vx*dtM;p.y+=p.vy*dtM;return p.x>-20&&p.x<W+20&&p.y>-20&&p.y<H+20;});
+    g.projectiles=g.projectiles.filter(function(p){p.x+=p.vx*speedMul*dtM;p.y+=p.vy*speedMul*dtM;return p.x>-20&&p.x<W+20&&p.y>-20&&p.y<H+20;});
 
     var escaped=false;
-    g.monsters=g.monsters.filter(function(m){m.x+=m.vx*dtM;m.y+=m.vy*dtM;m.bobPhase+=0.04*dtM;if(m.hitTimer>0)m.hitTimer-=dt;if(m.x<m.size/2){m.x=m.size/2;m.vx=Math.abs(m.vx);}if(m.x>W-m.size/2){m.x=W-m.size/2;m.vx=-Math.abs(m.vx);}if(m.y>H+30){escaped=true;return false;}return true;});
+    g.monsters=g.monsters.filter(function(m){m.x+=m.vx*speedMul*dtM;m.y+=m.vy*speedMul*dtM;m.bobPhase+=0.04*dtM;if(m.hitTimer>0)m.hitTimer-=dt;if(m.x<m.size/2){m.x=m.size/2;m.vx=Math.abs(m.vx);}if(m.x>W-m.size/2){m.x=W-m.size/2;m.vx=-Math.abs(m.vx);}if(m.y>H+30){escaped=true;return false;}return true;});
     if(escaped){g.highScore=Math.max(g.highScore,g.score);screen="gameover";gameoverTime=Date.now();goAnimScore=0;goAnimWave=0;goAnimDone=false;}
 
     g.projectiles=g.projectiles.filter(function(p){
@@ -244,6 +245,7 @@ function loop(time){
             if(g.waveKills>=g.waveTarget){
               g.wave++;g.waveKills=0;g.waveTarget=5+g.wave*2;g.arrows=Math.min(g.maxArrows,g.arrows+3);
               g.effects.push({x:W/2,y:H/2-50,frame:0,type:"wave",text:"WAVE "+g.wave});
+              if(g.wave>=15&&!g.dog){g.dog={x:g.playerX,y:g.playerY+5,dir:1,speed:0.5,size:28,bobPhase:0};g.effects.push({x:g.playerX,y:g.playerY,frame:0,type:"wave",text:"🐕 仲間が加わった！"});shake.t=200;}
               if(g.wave%5===0){var bLv=Math.floor(g.wave/5),bHp=15+bLv*10;var bn=["ダークトレント","フォレストドラゴン","エルダービースト","カオスガーディアン"];var be=["🌲","🐲","👿","💀"];g.boss={x:W/2,y:-80,targetY:100,hp:bHp,maxHp:bHp,size:80,speed:0.3,phase:0,hitTimer:0,score:3000+bLv*2000,name:bn[Math.min(bLv-1,3)],emoji:be[Math.min(bLv-1,3)],level:bLv,attackTimer:0};g.effects.push({x:W/2,y:H/2-80,frame:0,type:"boss_warn",text:"⚠ BOSS ⚠"});shake.t=500;}
             }
           }
@@ -255,9 +257,11 @@ function loop(time){
 
     g.effects=g.effects.filter(function(e){e.frame+=dtM;if(e.type==="particle"){e.x+=(e.vx||0)*dtM;e.y+=(e.vy||0)*dtM;e.vy=(e.vy||0)+0.1;}return e.frame<22;});
 
+    if(g.dog){var dog=g.dog;dog.bobPhase+=0.06*dtM;dog.y=g.playerY+5;dog.x+=dog.speed*dog.dir*speedMul*dtM;if(dog.x>g.playerX+80)dog.dir=-1;if(dog.x<g.playerX-80)dog.dir=1;if(dog.x<20){dog.x=20;dog.dir=1;}if(dog.x>W-20){dog.x=W-20;dog.dir=-1;}g.monsters.forEach(function(m){if(dist(dog.x,dog.y,m.x,m.y)<dog.size+m.size*0.4){var pushAngle=Math.atan2(H/2-m.y,W/2-m.x);var pushDist=80;m.x+=Math.cos(pushAngle)*pushDist;m.y+=Math.sin(pushAngle)*pushDist;m.x=Math.max(m.size/2,Math.min(W-m.size/2,m.x));m.y=Math.max(-m.size,Math.min(H/2,m.y));g.effects.push({x:dog.x,y:dog.y,frame:0,type:"hit"});shake.t=60;}});}
+
     if(g.boss){var bo=g.boss;
-      if(bo.y<bo.targetY)bo.y+=0.8*dtM;else{bo.phase+=0.015*dtM;bo.x=W/2+Math.sin(bo.phase)*(W/2-bo.size);bo.y+=0.05*dtM*bo.level;}
-      if(bo.hitTimer>0)bo.hitTimer-=dt;bo.attackTimer+=dt;
+      if(bo.y<bo.targetY)bo.y+=0.8*speedMul*dtM;else{bo.phase+=0.015*speedMul*dtM;bo.x=W/2+Math.sin(bo.phase)*(W/2-bo.size);bo.y+=0.05*speedMul*dtM*bo.level;}
+      if(bo.hitTimer>0)bo.hitTimer-=dt;bo.attackTimer+=dt*speedMul;
       if(bo.attackTimer>3000&&bo.y>=bo.targetY){bo.attackTimer=0;g.monsters.push(spawnMonster(g.wave));}
       g.projectiles=g.projectiles.filter(function(p){if(dist(p.x,p.y,bo.x,bo.y)<bo.size*0.6){bo.hp-=p.special?5:1;bo.hitTimer=150;shake.t=p.special?250:100;g.effects.push({x:p.x,y:p.y,frame:0,type:p.special?"special_hit":"hit"});if(!p.special)return false;}return true;});
       if(bo.y>H+50){g.highScore=Math.max(g.highScore,g.score);screen="gameover";gameoverTime=Date.now();goAnimScore=0;goAnimWave=0;goAnimDone=false;g.boss=null;}
@@ -290,6 +294,7 @@ function loop(time){
     });
 
     ctx.setLineDash([5,5]);var almG=ctx.createLinearGradient(g.playerX,g.playerY-20,g.playerX+Math.cos(g.aimAngle)*70,g.playerY-20+Math.sin(g.aimAngle)*70);almG.addColorStop(0,"rgba(100,255,180,0.25)");almG.addColorStop(1,"rgba(100,255,180,0.02)");ctx.strokeStyle=almG;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(g.playerX,g.playerY-20);ctx.lineTo(g.playerX+Math.cos(g.aimAngle)*70,g.playerY-20+Math.sin(g.aimAngle)*70);ctx.stroke();ctx.setLineDash([]);
+    if(g.dog){var dog=g.dog;var dogBob=Math.sin(dog.bobPhase)*2;ctx.save();ctx.translate(dog.x,dog.y+dogBob);ctx.fillStyle="rgba(0,0,0,0.3)";ctx.beginPath();ctx.ellipse(0,14,14,3,0,0,Math.PI*2);ctx.fill();if(dog.dir<0){ctx.scale(-1,1);}ctx.font=dog.size+"px serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("🐕",0,0);ctx.restore();}
     drawPlayer(ctx,g.playerX,g.playerY,g.aimAngle);
 
     // HUD
@@ -299,6 +304,7 @@ function loop(time){
     ctx.fillStyle="rgba(255,238,136,0.5)";ctx.font="bold 9px "+FN;ctx.fillText("SCORE",W/2,13);
     ctx.textAlign="right";ctx.fillStyle=g.combo>2?"#ffcc44":"#99ddaa";ctx.font="bold 13px "+FN;if(g.combo>0)ctx.fillText("🔥"+g.combo,W-16,25);
     ctx.fillStyle="rgba(150,220,170,0.6)";ctx.font="bold 10px "+FN;ctx.fillText("WAVE "+g.wave,W-16,14);
+    if(speedMul>1){ctx.fillStyle="rgba(255,180,50,0.8)";ctx.font="bold 9px "+FN;ctx.textAlign="center";ctx.fillText("⚡TURBO",W/2,48);ctx.textAlign="right";}
     ctx.textAlign="left";ctx.fillStyle="#00eebb";ctx.font="bold 11px "+FN;ctx.fillText("Lv."+g.level,16,46);
     var lw=ctx.measureText("Lv."+g.level).width+6;drawBar(ctx,16+lw,39,100,7,Math.min(1,g.xp/g.xpToNext),"#00aa88","#00eebb",3);
     if(g.arrowSpeed>9){ctx.fillStyle="rgba(100,190,255,0.7)";ctx.font="bold 9px "+FN;ctx.textAlign="right";ctx.fillText("💨×"+(g.arrowSpeed/9).toFixed(1),W-16,48);}
@@ -310,9 +316,12 @@ function loop(time){
     ctx.shadowColor="#22ffaa";ctx.shadowBlur=30;ctx.fillStyle="#22ffaa";ctx.font="900 38px "+FN;ctx.fillText("もりのかりうど",W/2,195);ctx.shadowBlur=0;
     ctx.fillStyle="rgba(100,255,180,0.6)";ctx.font="400 14px "+FN;ctx.fillText("─ 原生林のモンスターハンティング ─",W/2,230);
     var emojis=["👾","🍄","🐗","🐻","🐉","👹","🌳"];emojis.forEach(function(em,i){ctx.globalAlpha=0.8+0.2*Math.sin(time/600+i);ctx.font=(i>=4?38:30)+"px serif";ctx.fillText(em,38+i*60,310);});ctx.globalAlpha=1;
-    var btnG=ctx.createLinearGradient(0,390,0,445);btnG.addColorStop(0,"#1a8a4a");btnG.addColorStop(1,"#126b38");ctx.fillStyle=btnG;ctx.shadowColor="#22ff88";ctx.shadowBlur=12;ctx.beginPath();ctx.roundRect(W/2-110,390,220,52,26);ctx.fill();ctx.shadowBlur=0;
-    ctx.strokeStyle="rgba(100,255,180,0.3)";ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(W/2-110,390,220,52,26);ctx.stroke();
-    ctx.fillStyle="#fff";ctx.font="700 20px "+FN;ctx.fillText("▶  タップでスタート",W/2,422);
+    var btnG=ctx.createLinearGradient(0,370,0,416);btnG.addColorStop(0,"#1a8a4a");btnG.addColorStop(1,"#126b38");ctx.fillStyle=btnG;ctx.shadowColor="#22ff88";ctx.shadowBlur=12;ctx.beginPath();ctx.roundRect(W/2-110,370,220,46,23);ctx.fill();ctx.shadowBlur=0;
+    ctx.strokeStyle="rgba(100,255,180,0.3)";ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(W/2-110,370,220,46,23);ctx.stroke();
+    ctx.fillStyle="#fff";ctx.font="700 18px "+FN;ctx.fillText("▶  スタンダード",W/2,398);
+    var btnT=ctx.createLinearGradient(0,424,0,470);btnT.addColorStop(0,"#aa5500");btnT.addColorStop(1,"#883300");ctx.fillStyle=btnT;ctx.shadowColor="#ffaa33";ctx.shadowBlur=12;ctx.beginPath();ctx.roundRect(W/2-110,424,220,46,23);ctx.fill();ctx.shadowBlur=0;
+    ctx.strokeStyle="rgba(255,200,100,0.3)";ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(W/2-110,424,220,46,23);ctx.stroke();
+    ctx.fillStyle="#fff";ctx.font="700 18px "+FN;ctx.fillText("⚡ ターボ ×1.5",W/2,452);
     ctx.fillStyle="rgba(150,220,180,0.7)";ctx.font="400 12px "+FN;ctx.fillText("🖱 タッチで狙う・タップで射つ",W/2,478);ctx.fillText("🏹 矢は自動で回復するよ",W/2,498);
     ctx.fillStyle="rgba(0,238,187,0.8)";ctx.font="700 12px "+FN;ctx.fillText("📈 レベルUPで矢のスピード＆上限UP！",W/2,518);
     ctx.fillStyle="rgba(255,200,100,0.8)";ctx.font="700 12px "+FN;ctx.fillText("🎁 ラッキーボックスで5方向必殺の矢！",W/2,538);
@@ -351,6 +360,7 @@ function loop(time){
       ctx.fillStyle="rgba(170,220,170,0.9)";ctx.font="700 15px "+FN;ctx.fillText("🏆 ハイスコア: "+g.highScore,W/2,300);
       ctx.fillStyle="rgba(170,220,170,0.8)";ctx.font="400 14px "+FN;ctx.fillText("WAVE "+goAnimWave+" 到達",W/2,325);
       ctx.fillStyle="rgba(0,238,187,0.7)";ctx.font="400 13px "+FN;ctx.fillText("Lv."+g.level+"  💨×"+(g.arrowSpeed/9).toFixed(1)+"  ♻"+(g.arrowRegenInterval/1000).toFixed(1)+"s  🏹"+g.maxArrows+"本",W/2,350);
+      if(speedMul>1){ctx.fillStyle="rgba(255,180,50,0.9)";ctx.font="700 13px "+FN;ctx.fillText("⚡ ターボモード ×"+speedMul,W/2,368);}
       // Share section
       ctx.fillStyle="rgba(255,220,100,0.8)";ctx.font="700 13px "+FN;ctx.fillText("スコアをシェアしよう！",W/2,378);
       var sbY=390,sbW=100,sbH=40,sbGap=14;
